@@ -1,19 +1,54 @@
-#ifndef TEST_H
-# define TEST_H
-# include <unistd.h>
-# include <time.h>
-# include <stdlib.h>
-# include <stdio.h>
-# include <limits.h>
-# include <string.h>
-# include "test.h"
+#include "test.h"
+
+/* Analyses differences between two files
+ * Returns -1 if an error occured, 0 if no difference was noted and 1 if a difference was observed
+*/
+int		analyse_differences(char *path1, char *path2)
+{
+	char c1;
+	char c2;
+	int fd1;
+	int fd2;
+	int ret1;
+	int ret2;
+	if ((fd1 = open(path1, O_RDONLY | O_CREAT, 0664)) < 0)
+	{
+		printf("Opening \"%s\"...\n", path1);
+		perror("open:");
+		return (-1);
+	}
+	if ((fd2 = open(path2, O_RDONLY | O_CREAT, 0664)) < 0)
+	{
+		printf("Opening \"%s\"...\n", path1);
+		perror("open:");
+		close(fd1);
+		return (-1);
+	}
+	do 
+	{
+		ret1 = read(fd1, &c1, 1);
+		ret2 = read(fd2, &c2, 1);
+		if (c1 != c2)
+		{
+			close(fd1); close(fd2);
+			return (1);
+		}
+	} while (ret1 > 0 && ret2 > 0);
+	close(fd1); close(fd2);
+	if (ret1 == 0 && ret2 == 0)
+		return (0);
+	else if (ret1 < 0 || ret2 < 0)
+		return (-1);
+	else
+		return (1);
+}
 
 void	ft_putchar(char c)
 {
 	write(1, &c, 1);
 }
 
-void			ft_putstr(char *str)
+void	ft_putstr(char *str)
 {
 	unsigned char content;
 
@@ -168,9 +203,6 @@ char *alea_array(int size, unsigned int flags)
 void rand_free_and_put(char** array, int number, int min_index, char* src)
 {
 		int dice = min_index + rand() % (number - min_index);
-		free(array[dice]);
-
-		array[dice] = (char*)malloc(strlen(src)+1);
 		strcpy(array[dice], src);
 }
 
@@ -192,11 +224,11 @@ char **test_arrays(int number, int size, unsigned int flags)
 	if ((flags & STRING) == STRING)
 	{
 		strcpy(alea[min_index++],"");
-		strcpy(alea[min_index++],"a");
+		if (size >= 1) strcpy(alea[min_index++],"a");
 		rand_free_and_put(alea, number, min_index, "");
-		rand_free_and_put(alea, number, min_index, "a");
+		if (size >= 1) rand_free_and_put(alea, number, min_index, "a");
 		rand_free_and_put(alea, number, min_index, "");
-		rand_free_and_put(alea, number, min_index, "a");
+		if (size >= 1) rand_free_and_put(alea, number, min_index, "a");
 	}
 	return alea;
 }
@@ -312,5 +344,3 @@ int *test_unsigned_ints_from_to(int number, int min, int max)
 {
 	return test_ints_from_to(number, min, max, UNSIGNED);
 }
-
-#endif
